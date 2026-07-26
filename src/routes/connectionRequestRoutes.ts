@@ -4,6 +4,7 @@ import { ConnectionRequestModel, Status } from "../models/connectionRequest.js";
 import { UserModel } from "../models/userModel.js";
 const connectionRequestRouter = express.Router();
 import validator from "validator";
+import { run } from "../utils/sendEmail.js";
 
 //we should only give interested and ingored option for a connection request, accepted and rejected should be given only to the user who received the request
 
@@ -50,6 +51,9 @@ connectionRequestRouter.post(
       });
 
       const data = await conReq.save();
+      const emailBody = `${req.user?.firstName + " " + req.user?.lastName} has sent you a connection request. Say Hi.`;
+      const emailReceiver = toUser.email;
+      await run(emailBody, emailReceiver);
       res.json({ message: "Connection request sent successfully", data });
     } catch (error: any) {
       res.status(400).send("Error : " + error.message);

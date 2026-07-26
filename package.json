@@ -19,6 +19,7 @@
     "test": "npm run typecheck"
   },
   "dependencies": {
+    "@aws-sdk/client-ses": "^3.1095.0",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/jsonwebtoken": "^9.0.10",
