@@ -1,9 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { UserModel } from "../models/userModel.js";
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 export const authMiddleware = async (
   req: Request,

@@ -8,12 +8,18 @@ import cors from "cors";
 
 const app = express();
 
-app.use(
-  cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
-    credentials: true,
-  }),
-);
+// In production the frontend is served from the same origin as the API, so
+// requests are never cross-origin and CORS is unnecessary. Only mount it in
+// development, where Vite runs on a separate port.
+if (process.env.NODE_ENV !== "production") {
+  app.use(
+    cors({
+      origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+      credentials: true,
+    }),
+  );
+}
+
 app.use(express.json());
 app.use(cookieParser());
 
