@@ -51,7 +51,7 @@ const userSchema: Schema<IUser> = new Schema<IUser>(
     photoURL: {
       type: String,
       validate(value: string) {
-        if (!validator.isURL(value))
+        if (value.length && !validator.isURL(value))
           throw new Error("Profile picture not a valid url.");
       },
     },

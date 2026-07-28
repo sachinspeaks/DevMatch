@@ -30,7 +30,7 @@ export const validateEditProfileData = (req: Request) => {
   if ("about" in req.body) {
     if (req.body.about.length > 200) isEditAllowed = false;
   }
-  if ("photoURL" in req.body) {
+  if ("photoURL" in req.body && req.body.photoURL.length) {
     if (!validator.isURL(req.body.photoURL)) isEditAllowed = false;
   }
   return isEditAllowed;
