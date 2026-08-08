@@ -5,6 +5,7 @@ import profileRouter from "./routes/profileRoutes.js";
 import connectionRequestRouter from "./routes/connectionRequestRoutes.js";
 import userRouter from "./routes/userRoutes.js";
 import cors from "cors";
+import chatRouter from "./routes/chatRoutes.js";
 
 const app = express();
 
@@ -27,5 +28,6 @@ app.use("/", authRouter);
 app.use("/", profileRouter);
 app.use("/", connectionRequestRouter);
 app.use("/", userRouter);
+app.use("/", chatRouter);
 
 export default app;
