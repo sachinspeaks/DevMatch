@@ -2,6 +2,7 @@ import { Schema, Document, model } from "mongoose";
 import validator from "validator";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import { memberShipAmount } from "../utils/constants.js";
 
 export interface IUser extends Document {
   firstName: string;
@@ -13,6 +14,8 @@ export interface IUser extends Document {
   photoURL?: string;
   about?: string;
   skills?: string[];
+  isPremium: boolean;
+  membershipType?: string;
   getJWTToken(): string;
   isPasswordValid(sentPassword: string): Promise<boolean>;
 }
@@ -63,6 +66,15 @@ const userSchema: Schema<IUser> = new Schema<IUser>(
           return value.length <= 10;
         },
         message: "At most 10 skills can be added.",
+      },
+    },
+    isPremium: { type: Boolean, default: false },
+    membershipType: {
+      type: String,
+      validate(value: string) {
+        if (value && !Object.keys(memberShipAmount).includes(value)) {
+          throw new Error("Membership type is not valid.");
+        }
       },
     },
   },

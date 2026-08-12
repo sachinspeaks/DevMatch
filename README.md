@@ -1,11 +1,19 @@
-# GitMatch
+# GitMatch (DevMatch)
 
-A social/matchmaking platform for developers ("DevTinder" style). Users sign up, build a
-developer profile (skills, bio, photo), browse a feed of other developers they haven't
-interacted with yet, and send / review connection requests.
+DevMatch is a full-stack developer networking platform that helps developers discover one
+another, create professional profiles, send connection requests, and chat in real time
+after connecting. This repository contains its backend API and Socket.IO server.
 
-This repository contains the **backend REST API** — Node.js + Express 5 + TypeScript +
-MongoDB (Mongoose), with cookie-based JWT authentication.
+Built with Node.js, Express, TypeScript, MongoDB, and Mongoose, the application uses
+JWT-based, cookie-authenticated sessions to protect profiles, connections, and chats.
+
+## Key Features
+
+- Create and manage developer profiles with skills, bio, photo, and personal details.
+- Browse a paginated developer feed and send or review connection requests.
+- View accepted connections and pending incoming requests.
+- Exchange real-time messages with accepted connections using Socket.IO.
+- Persist chat history in MongoDB and retrieve it through an authenticated REST endpoint.
 
 ---
 
@@ -21,6 +29,7 @@ MongoDB (Mongoose), with cookie-based JWT authentication.
 | Password hashing| bcrypt (10 rounds)                            |
 | Validation      | `validator` + custom helpers                  |
 | CORS            | `cors`, locked to `http://localhost:5173`     |
+| Real-time chat  | Socket.IO with authenticated, connection-only rooms |
 
 ---
 
@@ -28,21 +37,24 @@ MongoDB (Mongoose), with cookie-based JWT authentication.
 
 ```
 src/
-├── server.ts                        # Entry point — connects to DB, starts HTTP server
+├── server.ts                        # Entry point — connects to DB, starts HTTP + Socket.IO server
 ├── app.ts                           # Express app — CORS, JSON, cookies, router mounting
 ├── config/
 │   └── db.ts                        # Mongoose connection (exits process on failure)
 ├── models/
 │   ├── userModel.ts                 # User schema + getJWTToken() / isPasswordValid()
-│   └── connectionRequest.ts         # ConnectionRequest schema + Status enum
+│   ├── connectionRequest.ts         # ConnectionRequest schema + Status enum
+│   └── chatModel.ts                 # Chat participants and persisted messages
 ├── middlewares/
 │   └── authMiddleware.ts            # Reads token cookie, verifies JWT, attaches req.user
 ├── routes/
 │   ├── authRoutes.ts                # /signup, /login, /logout
+│   ├── chatRoutes.ts                # /chat/:targetUserId
 │   ├── profileRoutes.ts             # /profile/view, /profile/edit, /profile/update
 │   ├── connectionRequestRoutes.ts   # /request/send/..., /request/review/...
 │   └── userRoutes.ts                # /feed, /user/connections, /user/requests/received, /allusers
 ├── utils/
+│   ├── socket.ts                    # JWT-authenticated Socket.IO chat events
 │   └── validation.ts                # Signup / edit / password validation helpers
 └── types/express/index.d.ts         # Augments Express.Request with `user`
 ```
@@ -126,6 +138,12 @@ Indexed on `{ fromUserId, toUserId }`. Timestamps enabled.
 - `interested` / `ignore` — set by the **sender** when creating a request.
 - `accepted` / `rejected` — set by the **receiver** when reviewing a request.
 
+### Chat
+
+Each chat stores the two participant IDs and their messages. A message includes the
+sender ID, sender's first name, message text, and timestamp. Chat records are only
+created for users with an accepted connection.
+
 ---
 
 ## Authentication
@@ -140,6 +158,20 @@ route runs `authMiddleware`, which:
 
 Clients must send requests with credentials included (e.g. `fetch(..., { credentials: "include" })`),
 and must originate from `http://localhost:5173` to satisfy the CORS config.
+
+## Real-Time Chat
+
+DevMatch provides real-time, one-to-one messaging through Socket.IO. Socket connections
+are authenticated with the same JWT cookie used by the REST API. Only users with an
+accepted connection can join a shared chat room, send messages, or access the chat
+history. Messages are broadcast as `newMessage` events and persisted in MongoDB.
+
+| Event | Purpose |
+| ----- | ------- |
+| `joinChat` | Joins the authenticated user's room with an accepted connection. |
+| `sendMessage` | Stores a message and broadcasts it to everyone in that chat room. |
+| `newMessage` | Delivers a newly sent message to connected chat participants. |
+| `chatError` | Reports an attempt to send a message before joining the room. |
 
 ---
 
@@ -364,6 +396,25 @@ Returns an array of users with the safe field set, sorted by `_id` ascending.
 
 - `200` — array of users
 - `400` — `{ "message": "<message>" }`
+- `401` — not authenticated
+
+---
+
+### Chat
+
+#### 🔒 `GET /chat/:targetUserId`
+
+Returns the authenticated user's chat history with an accepted connection. If no chat
+exists yet, an empty chat is created. Both the REST endpoint and Socket.IO chat rooms are
+restricted to accepted connections.
+
+| Param | Value |
+| ----- | ----- |
+| `:targetUserId` | A valid MongoDB ObjectId for an accepted connection |
+
+- `200` — `{ "chat": { "participants": [...], "messages": [...] } }`
+- `400` — `{ "message": "Invalid target user ID" }`
+- `403` — `{ "message": "Not allowed" }`
 - `401` — not authenticated
 
 ---

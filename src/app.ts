@@ -6,6 +6,7 @@ import connectionRequestRouter from "./routes/connectionRequestRoutes.js";
 import userRouter from "./routes/userRoutes.js";
 import cors from "cors";
 import chatRouter from "./routes/chatRoutes.js";
+import paymentRouter from "./routes/paymentRoutes.js";
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use(cookieParser());
 app.use("/", authRouter);
 app.use("/", profileRouter);
 app.use("/", connectionRequestRouter);
+app.use("/", paymentRouter);
 app.use("/", userRouter);
 app.use("/", chatRouter);
 
