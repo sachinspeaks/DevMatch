@@ -37,7 +37,6 @@ paymentRouter.post(
         },
       };
       const order = await rpayInstance.orders.create(options);
-      console.log("yaha aya ");
 
       //save it(order details) in db.
       const paymentData = await new PaymentModel({
