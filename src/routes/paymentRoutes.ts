@@ -93,19 +93,19 @@ paymentRouter.post("/payment/webhook", async (req, res) => {
     console.log(`${user.firstName} is now premium`);
     await user.save();
 
-    // if (req.body.event === "payment.captured") {
-    //   //update the payment status in db.
-    //   //update the user as premium
-    // }
-    // if (req.body.event === "") {
-    // }
-    //at last be sure to send success status code to razorpay.
-
     return res.status(200).json({ message: "Webhook received successfully." });
   } catch (error) {
     console.log(error);
     res.status(500).json(error);
   }
+});
+
+paymentRouter.get("/payment/verify", authMiddleware, async (req, res) => {
+  const user = req.user;
+  if (user?.isPremium) {
+    return res.json({ isPremium: true });
+  }
+  return res.json({ isPremium: false });
 });
 
 export default paymentRouter;
