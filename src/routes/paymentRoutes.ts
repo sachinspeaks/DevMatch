@@ -5,6 +5,7 @@ import { PaymentModel } from "../models/paymentModel.js";
 import { memberShipAmount } from "../utils/constants.js";
 import { validateWebhookSignature } from "razorpay/dist/utils/razorpay-utils.js";
 import { UserModel } from "../models/userModel.js";
+import { resolveSoa } from "node:dns";
 
 const paymentRouter = express.Router();
 
@@ -91,16 +92,22 @@ paymentRouter.post("/payment/webhook", async (req, res) => {
     user.isPremium = true;
     user.membershipType = payment.notes?.planType || "premium";
 
+    console.log("user.firstName is now premium");
     await user.save();
 
-    if (req.body.event === "payment.captured") {
-      //update the payment status in db.
-      //update the user as premium
-    }
-    if (req.body.event === "") {
-    }
+    // if (req.body.event === "payment.captured") {
+    //   //update the payment status in db.
+    //   //update the user as premium
+    // }
+    // if (req.body.event === "") {
+    // }
     //at last be sure to send success status code to razorpay.
-  } catch (error) {}
+
+    return res.status(200).json({ message: "Webhook received successfully." });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error);
+  }
 });
 
 export default paymentRouter;
