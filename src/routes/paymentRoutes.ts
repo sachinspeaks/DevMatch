@@ -60,7 +60,6 @@ paymentRouter.post(
 
 paymentRouter.post("/payment/webhook", async (req, res) => {
   try {
-    console.log("webhook called the server.");
     const webHookSignature = req.get("X-Razorpay-Signature") || "";
     if (Array.isArray(webHookSignature))
       throw new Error("Web Hook signature is not valid.");
@@ -91,7 +90,7 @@ paymentRouter.post("/payment/webhook", async (req, res) => {
     user.isPremium = true;
     user.membershipType = payment.notes?.planType || "premium";
 
-    console.log("user.firstName is now premium");
+    console.log(`${user.firstName} is now premium`);
     await user.save();
 
     // if (req.body.event === "payment.captured") {
