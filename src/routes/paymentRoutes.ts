@@ -5,7 +5,6 @@ import { PaymentModel } from "../models/paymentModel.js";
 import { memberShipAmount } from "../utils/constants.js";
 import { validateWebhookSignature } from "razorpay/dist/utils/razorpay-utils.js";
 import { UserModel } from "../models/userModel.js";
-import { resolveSoa } from "node:dns";
 
 const paymentRouter = express.Router();
 
@@ -61,7 +60,8 @@ paymentRouter.post(
 
 paymentRouter.post("/payment/webhook", async (req, res) => {
   try {
-    const webHookSignature = req.headers["X-Razorpay-Signature"] || "";
+    console.log("webhook called the server.");
+    const webHookSignature = req.get("X-Razorpay-Signature") || "";
     if (Array.isArray(webHookSignature))
       throw new Error("Web Hook signature is not valid.");
 
