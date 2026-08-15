@@ -1,4 +1,4 @@
-import express from "express";
+import express, { type Request } from "express";
 import cookieParser from "cookie-parser";
 import authRouter from "./routes/authRoutes.js";
 import profileRouter from "./routes/profileRoutes.js";
@@ -22,7 +22,13 @@ if (process.env.NODE_ENV !== "production") {
   );
 }
 
-app.use(express.json());
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      (req as Request).rawBody = buf;
+    },
+  }),
+);
 app.use(cookieParser());
 
 app.use("/", authRouter);

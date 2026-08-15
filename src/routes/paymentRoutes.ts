@@ -65,8 +65,9 @@ paymentRouter.post("/payment/webhook", async (req, res) => {
       throw new Error("Web Hook signature is not valid.");
 
     const webHookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || "";
+    if (!req.rawBody) throw new Error("Missing raw request body.");
     const isWebHookValid = validateWebhookSignature(
-      JSON.stringify(req.body),
+      req.rawBody.toString(),
       webHookSignature,
       webHookSecret,
     );
@@ -84,14 +85,13 @@ paymentRouter.post("/payment/webhook", async (req, res) => {
     if (!payment || !payment.userId)
       throw new Error("invalid payment saved in db.");
 
-    const user = await UserModel.findOne({ _id: payment?.userId });
-    if (!user) throw new Error("User not found in db.");
-
-    user.isPremium = true;
-    user.membershipType = payment.notes?.planType || "premium";
-
-    console.log(`${user.firstName} is now premium`);
-    await user.save();
+    if (req.body.event === "payment.captured") {
+      const user = await UserModel.findOne({ _id: payment?.userId });
+      if (!user) throw new Error("User not found in db.");
+      user.isPremium = true;
+      user.membershipType = payment.notes?.planType || "premium";
+      await user.save();
+    }
 
     return res.status(200).json({ message: "Webhook received successfully." });
   } catch (error) {
@@ -101,11 +101,26 @@ paymentRouter.post("/payment/webhook", async (req, res) => {
 });
 
 paymentRouter.get("/payment/verify", authMiddleware, async (req, res) => {
-  const user = req.user;
-  if (user?.isPremium) {
-    return res.json({ isPremium: true });
+  const { orderId } = req.query;
+  if (typeof orderId !== "string") {
+    return res.status(400).json({ message: "orderId is required." });
   }
-  return res.json({ isPremium: false });
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized." });
+  }
+
+  const payment = await PaymentModel.findOne({
+    orderId,
+    userId: req.user._id,
+  });
+  if (!payment) {
+    return res.status(404).json({ message: "Order not found." });
+  }
+
+  return res.json({
+    isPremium: !!req.user.isPremium,
+    paymentStatus: payment.status,
+  });
 });
 
 export default paymentRouter;
